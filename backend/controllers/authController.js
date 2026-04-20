@@ -1,5 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+// Klasör yolunu garantiye alıyoruz (../models/userModel)
 const {
   createCompany,
   createUser,
@@ -8,6 +10,7 @@ const {
 } = require("../models/userModel");
 
 const generateToken = (user) => {
+  // .env dosyasındaki JWT_SECRET'ı kullanır
   return jwt.sign(
     {
       id: user.id,
@@ -15,7 +18,7 @@ const generateToken = (user) => {
       role: user.role,
       companyName: user.companyName,
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || "fallback_secret_key", 
     { expiresIn: "1d" }
   );
 };
@@ -32,7 +35,6 @@ const register = async (req, res) => {
     }
 
     const existingUser = findUserByEmail(email);
-
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -87,7 +89,6 @@ const login = async (req, res) => {
     }
 
     const user = findUserByEmail(email);
-
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -96,7 +97,6 @@ const login = async (req, res) => {
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
@@ -130,7 +130,6 @@ const login = async (req, res) => {
 const getMe = (req, res) => {
   try {
     const user = findUserById(req.user.id);
-
     if (!user) {
       return res.status(404).json({
         success: false,
