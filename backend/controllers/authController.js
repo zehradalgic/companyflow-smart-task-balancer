@@ -4,6 +4,7 @@ const {
   createCompany,
   createUser,
   findUserByEmail,
+  findUserById,
 } = require("../models/userModel");
 
 const generateToken = (user) => {
@@ -12,7 +13,7 @@ const generateToken = (user) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      companyId: user.companyId,
+      companyName: user.companyName,
     },
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
@@ -21,12 +22,12 @@ const generateToken = (user) => {
 
 const register = async (req, res) => {
   try {
-    const { companyName, fullName, email, password } = req.body;
+    const { fullName, email, password, companyName } = req.body;
 
-    if (!companyName || !fullName || !email || !password) {
+    if (!fullName || !email || !password || !companyName) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required.",
+        message: "fullName, email, password and companyName are required.",
       });
     }
 
@@ -39,7 +40,6 @@ const register = async (req, res) => {
       });
     }
 
-    const company = createCompany(companyName);
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = createUser({
@@ -47,23 +47,24 @@ const register = async (req, res) => {
       email,
       password: hashedPassword,
       role: "admin",
-      companyId: company.id,
+      companyName,
     });
+
+    createCompany(companyName, user.id);
 
     const token = generateToken(user);
 
     return res.status(201).json({
       success: true,
-      message: "Company and admin account created successfully.",
+      message: "Company owner registered successfully.",
       token,
       user: {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        companyId: user.companyId,
+        companyName: user.companyName,
       },
-      company,
     });
   } catch (error) {
     return res.status(500).json({
@@ -114,7 +115,7 @@ const login = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        companyId: user.companyId,
+        companyName: user.companyName,
       },
     });
   } catch (error) {
@@ -126,7 +127,38 @@ const login = async (req, res) => {
   }
 };
 
+const getMe = (req, res) => {
+  try {
+    const user = findUserById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        companyName: user.companyName,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Could not fetch user.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
+  getMe,
 };

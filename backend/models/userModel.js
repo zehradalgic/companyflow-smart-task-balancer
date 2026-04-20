@@ -1,27 +1,27 @@
+const { randomUUID } = require("crypto");
+
 const users = [];
 const companies = [];
 
-let nextUserId = 1;
-let nextCompanyId = 1;
-
-function createCompany(name) {
+function createCompany(name, ownerId) {
   const company = {
-    id: nextCompanyId++,
+    id: randomUUID(),
     name,
+    ownerId,
   };
 
   companies.push(company);
   return company;
 }
 
-function createUser({ fullName, email, password, role, companyId }) {
+function createUser({ fullName, email, password, role, companyName }) {
   const user = {
-    id: nextUserId++,
+    id: randomUUID(),
     fullName,
     email,
     password,
     role,
-    companyId,
+    companyName,
   };
 
   users.push(user);
